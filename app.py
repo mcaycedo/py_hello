@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify
 app = Flask(__name__)
+import sqlite3
+from sqlite3 import Error
 
 @app.route('/getmsg/', methods=['GET'])
 def respond():
@@ -19,7 +21,15 @@ def respond():
         response["ERROR"] = "name can't be numeric."
     # Now the user entered a valid name
     else:
-        response["MESSAGE"] = f"Welcome {name} to our awesome platform!!"
+        conn = create_connection("data.db")
+        nombre = ('Mario', 'Caycedo')
+        insert_tabla(conn, (name, name))
+       
+        cur = conn.cursor()
+        res = cur.execute("select count(*) cuenta from tabla")
+        conn.commit()
+        cuenta =  str(list(res)[0][0])
+        response["MESSAGE"] = f"Welcome {name} to our awesome platform!!{cuenta}"
 
     # Return the response in json format
     return jsonify(response)
@@ -45,6 +55,23 @@ def post_something():
 def index():
     return "<h1>Welcome to our server !!</h1>"
 
+def create_connection(db_file):
+    conn = None
+    try:
+        conn = sqlite3.connect(db_file)
+    except Error as e:
+        print(e)
+
+    return conn
+
+def insert_tabla(conn, name):
+    sql = "INSERT INTO tabla(nombre,apellido, fecha) select ?,?, datetime('now')"
+    #sql = "INSERT INTO tabla(nombre,apellido) select ?, ?"
+    cur = conn.cursor()
+    cur.execute(sql, name)
+    conn.commit()
+    return cur.lastrowid
+    
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support
     app.run(threaded=True, port=5000)
